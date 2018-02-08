@@ -20,14 +20,15 @@ public:   Connection(int conn_id);
 };
 class ServerTCP{
 private:  int sock_id;
-public:   ServerTCP(int port, bool loopback); /* API: bind() */
+public:   ServerTCP(int port, bool loopback); /* API: socket(),bind() */
           ~ServerTCP(); /* API: close() */
           Connection accetta(); /* API: accept() */
           bool broadcast(bool broadcast); /* API: setsockopt() */
 };
 class ClientTCP{
 private:  int sock_id;
-public:   ClientTCP(bool loopback);
+          Connection* connessione;
+public:   ClientTCP(bool loopback); /* API: socket() */
           ~ClientTCP(); /* API: close() */
           bool connetti(Address server); /* API: connect() */
           bool invia(char* msg);
@@ -36,8 +37,23 @@ public:   ClientTCP(bool loopback);
           char* ricevi_raw(int* length); /* API: recv() */
           bool broadcast(bool broadcast); /* API: setsockopt() */
 };
-
-
+bool ClientTCP::connetti(Address server){
+          struct sockaddr_in server_addr;
+          server_addr = server->get_address();
+          
+          int ret = connect(sock_id,
+                                (struct sockaddr*) &server_addr,
+                                (socklen_t)sizeof(struct sockaddr));          
+          if(ret) return true;
+    
+          /*si può passare sock_id perché sul client ha la stessa funzione di conn_id */
+          connessione = new Connessione(sock_id);
+          
+          return false;
+}
+bool ClientTCP::invia(char* msg){
+          return connessione->invia(msg);
+}
 
 
 
