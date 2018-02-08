@@ -14,25 +14,32 @@ protected:int sock_id;
 public:   SocketTCP(); /* API: socket() */
           ~SocketTCP(); /* API: close() */
           bool broadcast(bool broadcast); /* API: setsockopt() */
-}
+};
+
 class Connection{
 private:  int conn_id;
-public:   Connection(int conn_id);
+          bool fuffa;
+public:   Connection(int conn_id, bool fuffa);
           ~Connection(); /* API: shutdown() */
           bool invia(char* msg);
           bool invia_raw(void* buffer, int length); /* API: send() */
           char* ricevi();
           char* ricevi_raw(int* length); /* API: recv() */
 };
-class ServerTCP{
-private:  int sock_id;
+
+class ServerTCP: public SocketTCP{
 public:   ServerTCP(int port, bool loopback); /* API: bind(),listen() */
           ~ServerTCP(); /* API: close() */
           Connection accetta(); /* API: accept() */
 };
-class ClientTCP{
-private:  int sock_id;
-          Connection* connessione;
+ServerTCP::ServerTCP(int port, bool loopback): SocketTCP{
+          
+          //bind()
+          //listen()
+}
+
+class ClientTCP: public SocketTCP{
+private:  Connection* connessione;
 public:   ClientTCP(); /* API: socket() */
           ~ClientTCP(); /* API: close() */
           bool connetti(Address server); /* API: connect() */
@@ -54,6 +61,8 @@ bool ClientTCP::connetti(Address server){
           connessione = new Connessione(sock_id);
           
           return false;
+}
+ClientTCP::ClientTCP(): SocketTCP() {
 }
 bool ClientTCP::invia(char* msg){
           return connessione->invia(msg);
