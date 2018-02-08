@@ -9,6 +9,12 @@
 #define IP_MYSELF "0.0.0.0"
 #define MAX_CONN 50
 
+class SocketTCP{
+protected:int sock_id;
+public:   SocketTCP(); /* API: socket() */
+          ~SocketTCP(); /* API: close() */
+          bool broadcast(bool broadcast); /* API: setsockopt() */
+}
 class Connection{
 private:  int conn_id;
 public:   Connection(int conn_id);
@@ -20,22 +26,20 @@ public:   Connection(int conn_id);
 };
 class ServerTCP{
 private:  int sock_id;
-public:   ServerTCP(int port, bool loopback); /* API: socket(),bind() */
+public:   ServerTCP(int port, bool loopback); /* API: bind(),listen() */
           ~ServerTCP(); /* API: close() */
           Connection accetta(); /* API: accept() */
-          bool broadcast(bool broadcast); /* API: setsockopt() */
 };
 class ClientTCP{
 private:  int sock_id;
           Connection* connessione;
-public:   ClientTCP(bool loopback); /* API: socket() */
+public:   ClientTCP(); /* API: socket() */
           ~ClientTCP(); /* API: close() */
           bool connetti(Address server); /* API: connect() */
           bool invia(char* msg);
-          bool invia_raw(void* buffer, int length); /* API: send() */
+          bool invia_raw(void* buffer, int length);
           char* ricevi();
-          char* ricevi_raw(int* length); /* API: recv() */
-          bool broadcast(bool broadcast); /* API: setsockopt() */
+          char* ricevi_raw(int* length);
 };
 bool ClientTCP::connetti(Address server){
           struct sockaddr_in server_addr;
@@ -53,6 +57,9 @@ bool ClientTCP::connetti(Address server){
 }
 bool ClientTCP::invia(char* msg){
           return connessione->invia(msg);
+}
+char* ClientTCP::ricevi(){
+          return connessione->ricevi();
 }
 
 
