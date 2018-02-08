@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "Address.hpp"
+#include "errore.h"
 
 #define IP_LOOPBACK "127.0.0.1"
 #define IP_MYSELF "0.0.0.0"
@@ -16,10 +17,14 @@ public:   SocketTCP(); /* API: socket() */
           bool broadcast(bool broadcast); /* API: setsockopt() */
 };
 SocketTCP::SocketTCP(){
-          int ret = sock_id = socket(AF_INET, SOCK_STREAM, 0);
+          sock_id = socket(AF_INET, SOCK_STREAM, 0);
+          if(sock_id==-1)
+                    errore(-1,"socket()\n");
 }
 SocketTCP::~SocketTCP(){
-          close(sock_id);
+          int ret = close(sock_id);
+          if(close==-1)
+                    errore(-2,"close()\n");
 }
 bool SocketTCP::broadcast(bool broadcast){
           int option_value = broadcast? 1:0;
@@ -41,7 +46,11 @@ public:   Connection(int conn_id, bool fuffa);
           char* ricevi();
           char* ricevi_raw(int* length); /* API: recv() */
 };
-
+Connection::Connection(int conn_id, bool fuffa){
+          this.fuffa = fuffa;
+          this.conn_id = conn_id;
+}
+//-------------------------------------------------------------------------------------
 class ServerTCP: public SocketTCP{
 public:   ServerTCP(int port, bool loopback); /* API: bind(),listen() */
           ~ServerTCP(); /* API: close() */
