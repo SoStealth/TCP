@@ -15,7 +15,22 @@ public:   SocketTCP(); /* API: socket() */
           ~SocketTCP(); /* API: close() */
           bool broadcast(bool broadcast); /* API: setsockopt() */
 };
-
+SocketTCP::SocketTCP(){
+          int ret = sock_id = socket(AF_INET, SOCK_STREAM, 0);
+}
+SocketTCP::~SocketTCP(){
+          close(sock_id);
+}
+bool SocketTCP::broadcast(bool broadcast){
+          int option_value = broadcast? 1:0;
+          int ret = setsockopt(sock_id,
+                               SOL_SOCKET,
+                               SO_BROADCAST,
+                               &option_value,
+                               sizeof(int));
+          return(ret==-1);
+}
+//-------------------------------------------------------------------------------------
 class Connection{
 private:  int conn_id;
           bool fuffa;
