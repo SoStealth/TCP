@@ -3,6 +3,7 @@
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <list>
 #include "Address.hpp"
 #include "errore.h"
 
@@ -50,18 +51,76 @@ Connection::Connection(int conn_id, bool fuffa){
           this.fuffa = fuffa;
           this.conn_id = conn_id;
 }
+bool Connection::invia(char* msg){
+	return invia_raw(msg,strlen(msg)+1);
+}
+char* Connection::ricevi(){
+	int length;
+	char* buffer = ricevi_raw(&length);
+	if(buffer!=NULL)
+		return NULL;
+	*(buffer+length) = '\0';
+	return buffer;
+}
+bool Connection::invia_raw(void* buffer, int length){
+	int ret;	
+	ret = send( conn_id,
+		    buffer,
+		    length,
+		    0);
+	return(ret!=length);
+}
+void* duplica(char* buffer, int* length){
+	char* ret = (char*)malloc(sizeof(char*)*(*length+1));
+	for(int i=0;i<=*length;i++)
+		*(ret+i)=*(buffer+i);
+	return ret;
+}
+bool Connection::ricevi_raw(int* length){
+	char buffer[MAX_MSG+1];
+	*length = recv(	conn_id,
+			buffer,
+			MAX_MSG,
+			0);
+	return(*length==-1?NULL:duplica(buffer,length));
+}
 //-------------------------------------------------------------------------------------
 class ServerTCP: public SocketTCP{
+private:  std::list<Connessione> connessioni;
 public:   ServerTCP(int port, bool loopback); /* API: bind(),listen() */
           ~ServerTCP(); /* API: close() */
-          Connection accetta(); /* API: accept() */
+          Connection* accetta(); /* API: accept() */
+          void invia_a_tutti(char* msg);
+          void disconnetti(Connection connessione);
 };
 ServerTCP::ServerTCP(int port, bool loopback): SocketTCP{
-          
-          //bind()
-          //listen()
+          Address myself(IP_MYSELF,port);
+	sock_id = socket(AF_INET, SOCK_STREAM, 0);
+	bind(	sock_id,
+		(struct sockaddr) myself.get_address(),
+		(socklen_t) sizeof(struct sockaddr));
+	listen(sock_id,1);
+	conn_id = -1;
 }
-
+ServerTCP::~ServerTCP(){
+          connessioni.clear();
+}
+Connection* ServerTCP::accetta() {
+          Connection* ret;
+          int conn_id;
+          conn_id = accept(sock_id,(struct sockaddr*)&client,(socklen_t*)&length);
+          ret = new Connection(conn_id,false);
+          connessioni.push_front(*ret);
+          return ret;
+}
+void ServerTCP::invia_a_tutti(char* msg) {
+          for(Connection c : connessioni)
+                    c.invia(msg);
+}
+void ServerTCP::disconnetti(Connection connessione){
+          connessioni.remove(connessione);
+}
+//-------------------------------------------------------------------------------------
 class ClientTCP: public SocketTCP{
 private:  Connection* connessione;
 public:   ClientTCP(); /* API: socket() */
